@@ -63,6 +63,8 @@ colnames(NTS_wide) <- c("Year", "Car Availability", "Percentage")
 ggplot(data=NTS_wide, aes(x=Year, y=Percentage, group=`Car Availability`, fill=`Car Availability`)) + 
   geom_bar(position="stack", stat="identity") + theme(axis.text.x=element_text(angle=90)) + labs(title="National Travel Survey- Car Availability by Household") + ylab("% Availability") + xlab("Year of Response") + geom_text(aes(label=round(Percentage,1)), size=2.5, color="dark grey", position = position_stack(vjust=0.5)) + scale_fill_viridis_d()
 
+# save plot 
+ggsave("D:\\30daychartchallenge\\30daychart\\day1.jpg", dpi = 300)
 ```
 
 
@@ -96,6 +98,9 @@ for(i in 1:10){
 
 do.call(grid.arrange,p)
 
+
+# save plot 
+ggsave("D:\\30daychartchallenge\\30daychart\\day2.jpg",width=35, height=40, dpi = 300)
 ```
 
 
@@ -132,7 +137,10 @@ GPI_wide24 <- GPI_wide2 %>%
   summarise(n=sum(Percentage)) %>% 
   mutate(percentage_2 = n/sum(n))
 
-ggplot(data=GPI_wide24, aes(x=Year,y=percentage_2, fill=Country)) + xlab("Year") + ylab("HDI") + labs(title="Change in HDI relative to worst 9 countries since 2010 \n(proportion of total HDI Index)") + scale_fill_viridis_d() + geom_area(alpha=0.6 , size=1, colour="black")
+ggplot(data=GPI_wide2, aes(x=Year,y=Percentage, color=Country)) + xlab("Year") + ylab("HDI") + labs(title="Human Development Index in worst 9 countries since 2010") + scale_color_viridis_d() + geom_line(alpha=0.6 , size=1) + geom_point() + theme_minimal() + theme(plot.background = element_rect(fill="black"), panel.grid =element_line(color="grey"), axis.line = element_line(colour = "grey"), text=element_text(color="white"))
+
+# save plot 
+ggsave("D:\\30daychartchallenge\\30daychart\\day3.jpg", dpi = 300)
 ```
 
 # Day 4- Magical
@@ -159,11 +167,15 @@ magic_wide <- magic_wide[!duplicated(magic_wide$norm), ]
 ## Data Visualisation ## 
 
 ggplot(data=magic_wide, aes(x=Week, y=norm)) + geom_line(size=0.9) + theme_dark() + theme(plot.background = element_rect("black")) + theme(panel.background = element_rect("black")) + theme(axis.text = element_text(color="white")) + geom_ribbon(data=,aes(x=Week,ymax=norm),ymin=0,alpha=0.3) +
-theme(legend.position="none") + theme(panel.grid = element_blank()) + labs(title="Difference in Google Search Popularity between Witches and Wizards. \n Positive value means Witches were more popular that week") + ylab("Google Search Trend Popularity") + xlab("Week") + theme(title=element_text(color="white")) + geom_link2(lwd=1.5,
+theme(legend.position="none") + theme(panel.grid = element_blank()) + labs(title="Difference in Google Search Popularity between Witches and Wizards. \n Positive value means Witches were more popular that week") + ylab("Google Search Trend Popularity") + xlab("Week") + theme(title=element_text(color="white"), text=element_text(family="serif")) + geom_link2(lwd=1.5,
              aes(color = after_stat(y < 0)))+
   scale_color_manual(
     values = c("yellow", "blue")) 
 
+library(extrafont)
+loadfonts(device = "win")
+# save plot 
+ggsave("D:\\30daychartchallenge\\30daychart\\day4.jpg", dpi = 300)
 ```
 # Day 5- Slope
 
@@ -200,6 +212,9 @@ ggplot(data=NTS_wide, aes(x=Time, y=Percentage, group=Reasons, color=Reasons)) +
   geom_smooth(method="lm", linetype="dashed", se=T, color="black") + 
   geom_line(stat="identity", size=0.9) + theme_classic()  + facet_wrap(~Reasons, labeller=label_wrap_gen()) + theme(legend.position="none") + theme(axis.text.x=element_text(angle=90)) + labs(title="National Travel Survey- Reasons Not to Complete Driving Licence") + ylab("% of 17-20 Year Olds") + xlab("Year of Response") + scale_color_viridis_d()
 
+
+# save plot 
+ggsave("D:\\30daychartchallenge\\30daychart\\day5.jpg", dpi = 300)
 ```
 # Day 6- Experimental
 
@@ -302,6 +317,9 @@ geom_text(data=base_data, aes(x = title, y = -18, label=continent), hjust=c(1,1,
  
  
 p
+
+# save plot 
+ggsave("D:\\30daychartchallenge\\30daychart\\day6.jpg", dpi = 300)
 ```
 
 
