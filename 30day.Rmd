@@ -25,6 +25,11 @@ library(ggforce)
 library(cowplot)
 library(gridExtra)
 library(ggplot2)
+library(viridis)
+#install.packages(c("devtools", "mapproj", "tidyverse", "gtools"), lib="D:\\Libraries\\win-library\\4.0")
+#devtools::install_github("marcusvolz/strava"
+
+library(strava)
 
 ```
 
@@ -324,7 +329,78 @@ ggsave("D:\\30daychartchallenge\\30daychart\\day6.jpg", dpi = 300)
 
 
 
+# Day 7- Physical
 
+Using Personal Strava Data
+
+![Strava]()
+
+```{r Day7, fig.height=15, fig.width=15}
+
+# Read in the Data
+data <- process_data("D:\\30daychartchallenge\\30daychart\\data\\activities\\")
+
+#' Plot ridges of Strava activities by weekdays
+#'
+#' @param data A data frame output from process_data()
+#'
+#' @return A plot displaying ridges
+#' @export
+plot_ridges <- function(data) {
+  # Function for processing an activity on a minute-by-minute basis; active = 1, not active = 0
+  compute_day_curve <- function(df_row) {
+    start <- as.numeric(activity_time[df_row, "start_time"])
+    end <- as.numeric(activity_time[df_row, "end_time"])
+    wday <- as.character(activity_time[df_row, "wday"])
+
+    result <- data.frame(time = seq(as.POSIXct("00:00:00", format = "%H:%M:%S"),
+                                    as.POSIXct("23:59:58", format = "%H:%M:%S"),
+                                    by = 60
+    )) %>%
+      mutate(
+        time_end = lead(time, default = as.POSIXct("23:59:59", format = "%H:%M:%S")),
+        active = ifelse(time > start & time_end < end, 1, 0), wday = wday
+      )
+
+    result
+  }
+
+  activity_time <- data %>%
+    group_by(id) %>%
+    summarise(start = min(time), end = max(time)) %>%
+    mutate(
+      start_time = as.POSIXct(strftime(start, format = "%H:%M:%S"), format = "%H:%M:%S"),
+      end_time = as.POSIXct(strftime(end, format = "%H:%M:%S"), format = "%H:%M:%S"),
+      duration = end_time - start_time,
+      wday = lubridate::wday(start, week_start = 1)
+    )
+
+  # Process all activities
+  plot_data <- 1:nrow(activity_time) %>%
+    purrr::map_df(~ compute_day_curve(.x), .id = "id") %>%
+    filter(!is.na(active), active > 0) %>%
+    mutate(wday = as.factor(wday))
+
+  plot_data$wday <- factor(plot_data$wday, levels = rev(levels(plot_data$wday)))
+
+  # Create plot
+  p <- ggplot() +
+    ggridges::geom_density_ridges(aes(x = time, y = wday, fill=wday), plot_data, size = 0.5) +
+    ggridges::theme_ridges() +
+    scale_y_discrete(expand = c(0.01, 0), labels = c("Sun", "Sat", "Fri", "Thu", "Wed", "Tue", "Mon")) +
+    scale_x_datetime(expand = c(0, 0), date_labels = "%I:%M %p") +
+    theme(plot.background=element_rect(fill="black"), panel.grid = element_blank(), plot.margin = unit(rep(1, 4), "cm"), axis.text = element_text(color="white", size=25), axis.line = element_line(color="white"), plot.title = element_text(color="white", size=25), panel.grid.major.y = element_line(color="white")) +
+    xlab(NULL) +
+    ylab(NULL) + theme(legend.position="none") + labs(title="Time of Strava Activities") + scale_fill_viridis(discrete=TRUE)
+
+  p
+}
+
+plot_ridges(data)
+
+# save plot 
+ggsave("D:\\30daychartchallenge\\30daychart\\day7.jpg", width=12, height=10, dpi = 300)
+```
 
 
 
