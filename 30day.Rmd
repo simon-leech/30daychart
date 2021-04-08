@@ -29,7 +29,7 @@ library(viridis)
 #install.packages(c("devtools", "mapproj", "tidyverse", "gtools"), lib="D:\\Libraries\\win-library\\4.0")
 #devtools::install_github("marcusvolz/strava"
 
-library(strava)
+#library(strava)
 
 ```
 
@@ -404,6 +404,55 @@ ggsave("D:\\30daychartchallenge\\30daychart\\day7.jpg", width=12, height=10, dpi
 
 
 
+# Day 8- Animal
+
+Using CITES data on 2017-2021 Zoo Trade, and country centroid data. 
+
+![CITES](https://trade.cites.org/#) ![Country Centroids](https://developers.google.com/public-data/docs/canonical/countries_csv)
+
+```{r Day8, fig.height=15, fig.width=15}
+
+# Read in the Data
+zoo_trade <- fread("D:\\30daychartchallenge\\30daychart\\data\\zoo_trade.csv")
+
+# Keep only data with live being moved 
+zoo_trade <- zoo_trade[zoo_trade$Term=="live",]
+
+# Calculate number of moved specimens 
+zoo_trade$num_moved <- ifelse(is.na(zoo_trade$`Importer reported quantity`),zoo_trade$`Exporter reported quantity`, zoo_trade$`Importer reported quantity`)
+
+# Read in country centroid dataset 
+country_centroid <- fread("D:\\30daychartchallenge\\30daychart\\data\\country_centroid.csv")
+
+# Join country centroids to the data for both importer and exporter 
+zoo_trade <- merge(zoo_trade, country_centroid, by.x="Importer", by.y="country")
+zoo_trade <- merge(zoo_trade, country_centroid, by.x="Exporter", by.y="country")
+
+# Remove extra columns and rename columns 
+zoo_trade <- subset(zoo_trade, select=c("Year", "Exporter", "Importer", "latitude.x", "longitude.x", "latitude.y", "longitude.y", "num_moved"))
+colnames(zoo_trade) <- c("Year", "Importer", "Exporter", "Im_lat", "Im_long", "Ex_lat", "Ex_long", "num_moved")
+
+
+# Group data by Country and Year 
+zoo_trade2 <- zoo_trade %>% group_by(Importer, Year) %>% summarise("total"=sum(num_moved)) %>% ungroup()
+
+# Plot barchart
+# Remove data with MY as too large to display
+zoo_trade2 <- zoo_trade2[zoo_trade2$Importer!="MY",]
+
+# Calculate yearly average 
+av <- zoo_trade2 %>% group_by(Year) %>% summarise("av"=mean(total)) %>% ungroup()
+
+
+# Join average on 
+zoo_trade3 <- merge(zoo_trade2, av, by.x="Year", by.y="Year")
+
+ggplot(zoo_trade3, aes(x=Importer, y=total,fill=as.factor(Year))) + 
+         geom_bar(stat="identity", position="stack", color="black", alpha=0.8) + theme_classic() + labs(title="Movement of Trade for Zoos by CITES dataset, 2017-2021", fill="Year of Trade") + theme(legend.position="bottom", panel.background = element_rect(fill="#E0E0E0"))
+       
+       
+# save plot, 
+ggsave("D:\\30daychartchallenge\\30daychart\\day8.jpg", width=12, height=10, dpi = 300)
 
 
 
@@ -415,8 +464,7 @@ ggsave("D:\\30daychartchallenge\\30daychart\\day7.jpg", width=12, height=10, dpi
 
 
 
-
-
+```
 
 
 
