@@ -579,7 +579,7 @@ p <- plot_image / plot +
   )
 
 # Output Image 
-ggsave("C:\\Users\\simon\\Downloads\\day10.png", p, dpi=300)
+ggsave("E:\\30daychartchallenge\\30daychart\\day10.png", p, dpi=300)
 ```
 
 
@@ -621,7 +621,7 @@ p1
 # Plot together 
 plot_grid(p, p1, align="h")
 
-ggsave("C:\\Users\\simon\\Downloads\\day11.png", width=20, height=10, dpi=300)
+ggsave("E:\\30daychartchallenge\\30daychart\\day11.png", width=20, height=10, dpi=300)
 ```
 
 
@@ -647,7 +647,10 @@ storms <- storms[!duplicated(storms$year), ]
 
 # Proportional symbol plot over space
 p<- ggplot(storms, aes(x=year, y=1, fill=mean_wind)) + geom_tile()  + theme(plot.background=element_rect(fill="white", color="#E5E5E3"),panel.background=element_rect(fill="#E5E5E3", color="#E5E5E3"), panel.grid.major=element_blank(), panel.grid.minor=element_blank(), plot.caption = element_text(family="Montserrat", face="italic", size=20), plot.title=element_text(family="Montserrat", size=30), axis.text=element_text(family="Monserrat", size=30), axis.title=element_text(size=20),legend.position="left", axis.ticks.y = element_blank(), axis.text.y=element_blank(), axis.title.y=element_blank()) + 
-  labs(title="Hurricane Mean Wind Speed by Year", caption="#30daychartchallenge | Source: dplyr::storms", fill="Wind Speeds (knots)") + xlab("Year")  +  scale_fill_viridis_c(direction=-1) 
+  labs(title="Hurricane Mean Wind Speed by Year", caption="#30daychartchallenge | Source: dplyr::storms", fill="Wind Speeds (knots)") + xlab("Year")  +  scale_fill_viridis_c(direction=-1) +
+  geom_text(aes(label=count),hjust=0.5, vjust=-0.5, size=6, angle=0, color="white", alpha=0.8)
 
 p
+
+ggsave("D:\\30daychartchallenge\\30daychart\\day12.png", width=10, height=5, dpi=300)
 ```
