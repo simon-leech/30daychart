@@ -26,22 +26,26 @@ library(cowplot)
 library(gridExtra)
 library(ggplot2)
 library(viridis)
-install.packages("palmerpenguins")
+#install.packages("palmerpenguins")
 library(palmerpenguins)
 library(ggridges)
-## Packages
 library(tidyverse)
 library(magick) 
 library(scales)
-library(imager) 
+#library(imager) 
 library(cowplot)
 library(waffle)
-library(patchwork)
+#library(patchwork)
 library(showtext)
 #install.packages(c("devtools", "mapproj", "tidyverse", "gtools"), lib="D:\\Libraries\\win-library\\4.0")
 #devtools::install_github("marcusvolz/strava"
 #library(strava)
 
+
+font_add_google("Montserrat", "Montserrat")
+font_add_google("Sacramento", "Sacramento")
+font_add_google("Catamaran", "Catamaran")
+showtext_auto()
 ```
 
 ## 30 Day Chart Challenge 
@@ -513,11 +517,6 @@ ggsave("E:\\30daychartchallenge\\30daychart\\day9.jpg", width=12, height=10, dpi
 im <- image_read("C:\\Users\\simon\\Downloads\\Day10.jpg")
 
 
-font_add_google("Montserrat", "Montserrat")
-font_add_google("Sacramento", "Sacramento")
-font_add_google("Catamaran", "Catamaran")
-showtext_auto()
-
 ## Reduce the colour used in image with image_quantize.  For example, let's say I want to reduce to 24 colours.
 im %>%
   image_resize("500") %>%
@@ -585,6 +584,7 @@ ggsave("C:\\Users\\simon\\Downloads\\day10.png", p, dpi=300)
 
 
 # Day 11- Circular 
+
 ![Dplyr dataset](https://www.rpubs.com/gabrielbsousa/storms#:~:text=The%20%E2%80%9Cstorms%E2%80%9D%20dataset%20from%20the,the%20lifetime%20of%20a%20storm.)
 ```{r, Day 11}
 # Day 11- Hurricanes
@@ -624,3 +624,30 @@ plot_grid(p, p1, align="h")
 ggsave("C:\\Users\\simon\\Downloads\\day11.png", width=20, height=10, dpi=300)
 ```
 
+
+# Day 12- Strips 
+![Dplyr dataset](https://www.rpubs.com/gabrielbsousa/storms#:~:text=The%20%E2%80%9Cstorms%E2%80%9D%20dataset%20from%20the,the%20lifetime%20of%20a%20storm.)
+```{r, Day 12}
+# Day 12- Hurricanes
+storms <- dplyr::storms
+
+# Group by name and keep only the maximum hu_diameter 
+storms<- storms %>% group_by(name) %>% mutate("max"= max(hu_diameter)) %>% ungroup()
+
+# Keep only one record for each storm 
+storms <- storms[!duplicated(storms$name),]
+
+# Add counting column 
+storms$count <- 1
+# Group data by year and count number of storms in that year 
+storms <- storms %>% group_by(year) %>% mutate("count"=sum(count), "mean_wind"=mean(wind)) %>% ungroup()
+
+# Remove duplicated year records 
+storms <- storms[!duplicated(storms$year), ]
+
+# Proportional symbol plot over space
+p<- ggplot(storms, aes(x=year, y=1, fill=mean_wind)) + geom_tile()  + theme(plot.background=element_rect(fill="white", color="#E5E5E3"),panel.background=element_rect(fill="#E5E5E3", color="#E5E5E3"), panel.grid.major=element_blank(), panel.grid.minor=element_blank(), plot.caption = element_text(family="Montserrat", face="italic", size=20), plot.title=element_text(family="Montserrat", size=30), axis.text=element_text(family="Monserrat", size=30), axis.title=element_text(size=20),legend.position="left", axis.ticks.y = element_blank(), axis.text.y=element_blank(), axis.title.y=element_blank()) + 
+  labs(title="Hurricane Mean Wind Speed by Year", caption="#30daychartchallenge | Source: dplyr::storms", fill="Wind Speeds (knots)") + xlab("Year")  +  scale_fill_viridis_c(direction=-1) 
+
+p
+```
