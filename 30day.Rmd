@@ -654,3 +654,47 @@ p
 
 ggsave("D:\\30daychartchallenge\\30daychart\\day12.png", width=10, height=5, dpi=300)
 ```
+
+
+# Day 13- Correlations 
+
+Using data from World Happiness Report and Sunlight Hours from UN
+
+![Happiness Reportt](https://worldhappiness.report/ed/2021/#appendices-and-data)
+![UN Sunlight](http://data.un.org/Data.aspx?q=Korea&d=CLINO&f=ElementCode%3A15%3BCountryCode%3AKO)
+
+```{r, Day 12}
+
+# Read in the data 
+WHR <- read_xls("D:\\30daychartchallenge\\30daychart\\data\\Happiness.xls")
+Sunlight <- fread("D:\\30daychartchallenge\\30daychart\\data\\Sunlight.csv")
+
+# Subset data 
+WHR <- subset(WHR, select=c("Country name", "Regional indicator", "Ladder score"))
+# Add column of uppercase country name (to try and match to other data) 
+WHR$Country_Name <- toupper(WHR$`Country name`)
+Sunlight <- subset(Sunlight, select=c("Country or Territory", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"))
+
+# Set -9999.99 to 0
+Sunlight[,2:13][Sunlight[,2:13]==-9999.9] <- 0
+# Add annual column  
+Sunlight <- Sunlight %>% group_by(`Country or Territory`) %>% mutate("Annual_Sunlight_Hours"=Jan+Feb+Mar+Apr+May+Jun+Jul+Aug+Sep+Oct+Nov+Dec) %>% ungroup()
+
+# Keep only records that don't contain a 0 
+Sunlight <- Sunlight[(Sunlight$Jan!=0 & Sunlight$Feb!=0 & Sunlight$Mar!=0 & Sunlight$Apr!=0 & Sunlight$May!=0 & Sunlight$Jun!=0 & Sunlight$Jul!=0 & Sunlight$Aug!=0 & Sunlight$Sep!=0 & Sunlight$Oct!=0 & Sunlight$Nov!=0 & Sunlight$Dec!=0),]
+
+# Mean data by Country
+Sunlight <- Sunlight %>% group_by(`Country or Territory`) %>% summarise("Mean_Sunlight"=mean(Annual_Sunlight_Hours)) %>% ungroup()
+
+# Join data to Happiness Report 
+Joined <- merge(WHR, Sunlight, by.x="Country_Name", by.y="Country or Territory")
+
+
+# Visualise 
+p <- ggplot(Joined, aes(x=`Ladder score`, y=Mean_Sunlight, color=`Regional indicator`)) + geom_point(alpha=0.8) + geom_smooth(color="black", alpha=0.7) + theme(plot.background=element_rect(fill="white", color="#E5E5E3"),panel.background=element_rect(fill="#E5E5E3", color="#E5E5E3"), panel.grid.major=element_blank(), panel.grid.minor=element_blank(), plot.caption = element_text(family="Montserrat", face="italic", size=20), plot.title=element_text(family="Montserrat", size=30), axis.text=element_text(family="Monserrat", size=30), axis.title=element_text(size=20),legend.position="left", legend.title=element_text(family="Montserrat", size=20), legend.text = element_text(family="Montserrat", size=20)) + 
+  labs(title="World Happiness Report vs Mean Sunlight Hours", color="Region") + ylab("Mean Annual Sunlight (Hours)") + xlab("World Happiness (ladder score)")  +  scale_color_viridis_d(direction=1, begin=0, end=0.9) 
+
+p
+
+ggsave("D:\\30daychartchallenge\\30daychart\\day13.png", width=10, height=5, dpi=300)
+```
