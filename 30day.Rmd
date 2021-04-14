@@ -660,7 +660,7 @@ ggsave("D:\\30daychartchallenge\\30daychart\\day12.png", width=10, height=5, dpi
 
 Using data from World Happiness Report and Sunlight Hours from UN
 
-![Happiness Reportt](https://worldhappiness.report/ed/2021/#appendices-and-data)
+![Happiness Report](https://worldhappiness.report/ed/2021/#appendices-and-data)
 ![UN Sunlight](http://data.un.org/Data.aspx?q=Korea&d=CLINO&f=ElementCode%3A15%3BCountryCode%3AKO)
 
 ```{r, Day 12}
@@ -698,3 +698,55 @@ p
 
 ggsave("D:\\30daychartchallenge\\30daychart\\day13.png", width=10, height=5, dpi=300)
 ```
+
+
+# Day 14- Space 
+
+Using data on Space 
+[Planetary Data](https://mdn.github.io/learning-area/html/tables/assessment-finished/planets-data.html)
+
+```{r, Day 14}
+# Read in the Data
+Planets <- read_html("https://nssdc.gsfc.nasa.gov/planetary/factsheet/") %>% 
+    # list all tables on the page
+    html_nodes(css = "table") %>%
+    # select the one containing needed key words
+    extract2(., str_which(string = . , pattern = "MERCURY")) %>% 
+    # convert to a table
+    html_table(fill = T)
+
+# Swap data around 
+Planets <- as.data.table(t(Planets))
+Planets <- Planets[,1:21]
+# Set row 1 to column names 
+names(Planets) <- Planets %>% slice(1) %>% unlist()
+names(Planets)[names(Planets)==""]<- "Planet_Name"
+
+# Remove extra data 
+Planets <- Planets[2:11,]
+
+# Remove moon 
+Planets <- Planets[Planets$Planet_Name!="MOON",]
+
+# Sort out diameter column 
+Planets$`Diameter (km)`<-  as.numeric(gsub(",", "", gsub("\\.", "", Planets$`Diameter (km)`)))
+Planets$`Mean Temperature (C)` <- as.numeric(Planets$`Mean Temperature (C)`)
+# Set to numeric 
+Planets <- as.data.frame(Planets)
+
+# Set data as numeric 
+Planets[,2:18] <- sapply(Planets[,2:18],as.numeric)
+
+Planets$Planet_Name <- factor(Planets$Planet_Name, levels=c("MERCURY", "VENUS", "EARTH", "MARS", "JUPITER", "SATURN", "URANUS", "NEPTUNE", "PLUTO"))
+# Visualise 
+p <- ggplot(Planets, aes(x=`Mean Temperature (C)`, y=`Diameter (km)`, color=Planet_Name)) + geom_point(data=Planets, alpha=0.8, aes(size=`Mass (1024kg)`)) + 
+  geom_line(data=Planets, aes(`Mean Temperature (C)`, y=`Diameter (km)`), color="black", linetype="dashed", alpha=0.3) +
+theme(plot.background=element_rect(fill="white", color="#E5E5E3"),panel.background=element_rect(fill="#E5E5E3", color="#E5E5E3"), panel.grid.major=element_blank(), panel.grid.minor=element_blank(), plot.caption = element_text(family="sans", face="italic", size=20), plot.title=element_text(family="sans", size=30), axis.text=element_text(family="sans", size=30), axis.title=element_text(size=20),legend.position="left", legend.title=element_text(family="sans", size=20), legend.text = element_text(family="sans", size=20)) + 
+  labs(title="Mean Temperature (C) vs Planetary Diameter (km)", color="Planet") + ylab("Diameter (km)") + xlab("Mean Temperature (C)")  +  scale_color_viridis_d(direction=1, begin=0, end=0.9) +  scale_size_continuous(range = c(2, 12), breaks=pretty_breaks(7)) + annotate("text", x=max(Planets$`Mean Temperature (C)`-15), y=1000, label="Closest to the Sun", size=10)
+
+p
+
+ggsave("D:\\30daychartchallenge\\30daychart\\day14.png", width=10, height=7, dpi=300)
+
+```
+
