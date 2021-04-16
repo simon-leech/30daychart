@@ -873,7 +873,7 @@ co2_tree <- co2_tree[!is.na(co2_tree$perc_gain) & !is.na(co2_tree$Mean_Emissions
 
 max(co2_tree$perc_gain)
 # Visualise 
-p <- ggplot(co2_tree, aes(area=perc_gain, fill=Mean_Emissions_2000_2012)) + geom_treemap() + scale_fill_viridis(direction=-1, option="D") + labs(title="Treemap of Tree Gain as % of Total Land Area and Emissions (kg per 2017 PPP $ of GDP) (2000-2012)", fill="Mean Emissions (kg per 2017 PPP $ of GDP) (2000-2012)") + geom_treemap_text(fontface = "italic", colour = "black", place = "centre", grow = TRUE, label=co2_tree$Country_Code)  + theme(plot.title=element_text(family="sans", size=30), axis.text=element_text(family="sans", size=30), legend.title=element_text(family="sans", size=20), legend.text = element_text(family="sans", size=20))
+p <- ggplot(co2_tree, aes(area=perc_gain, fill=Mean_Emissions_2000_2012)) + geom_treemap() + scale_fill_viridis(direction=-1, option="D") + labs(title="Treemap of Tree Gain as % of Total Land Area and Emissions (kg per 2017 PPP $ of GDP) (2000-2012)", fill="Mean Emissions (kg per 2017 PPP $ of GDP) (2000-2012)") + geom_treemap_text(fontface = "italic", colour = "black", place = "centre", grow = TRUE, label=co2_tree$Country_Code)  + theme(plot.title=element_text(family="sans", size=30), axis.text=element_text(family="sans", size=30), legend.title=element_text(family="sans", size=20), legend.text = element_text(family="sans", size=20)) + theme(legend.position="bottom")
 p
 
 
@@ -881,3 +881,61 @@ p
 ggsave("D:\\30daychartchallenge\\30daychart\\day16.png", width=10, height=7, dpi=300)
 
 ```
+
+# Day 17- Spotify Top 200 
+![Spotify Top 200](https://spotifycharts.com/regional)
+
+```{r Day17} 
+# Read in Data for US 
+spotify_us <- fread("https://spotifycharts.com/regional/us/daily/latest/download")
+
+# Remove top 2 rows and set column names
+spotify_us <- spotify_us[2:202,]
+names(spotify_us) <- spotify_us %>% slice(1) %>% unlist()
+spotify_us <- spotify_us[2:201,]
+spotify_us$Streams <- as.numeric(spotify_us$Streams)
+
+# Read in Data for US 
+spotify_uk <- fread("https://spotifycharts.com/regional/gb/daily/latest/download")
+
+# Remove top 2 rows and set column names
+spotify_uk <- spotify_uk[2:202,]
+names(spotify_uk) <- spotify_uk %>% slice(1) %>% unlist()
+spotify_uk <- spotify_uk[2:201,]
+spotify_uk$Streams <- as.numeric(spotify_uk$Streams)
+
+# merge together 
+spotify_compare <- merge(spotify_uk, spotify_us, by=c("Artist", "Track Name"))
+spotify_compare$Position.x <- as.numeric(spotify_compare$Position.x)
+spotify_compare$Position.y <- as.numeric(spotify_compare$Position.y)
+spotify_compare$diff <- spotify_compare$Position.x- spotify_compare$Position.y
+spotify_compare$id <- 1:nrow(spotify_compare)
+spotify_compare$full <- paste(spotify_compare$`Artist`,spotify_compare$`Track Name`, sep="-")
+
+
+spotify_compare <- spotify_compare %>% arrange(spotify_compare, Artist)
+
+# Make the plot
+p <- ggplot(spotify_compare, aes(x=full, y=diff, group=Artist, fill=Artist)) +       # Note that id is a factor. If x is numeric, there is some space between the first bar
+  geom_bar(stat="identity",alpha=0.5) +
+  theme_minimal() + 
+  labs(title="2017 Per Capita CO2 Emissions by Country") +
+  theme(
+    legend.position = "none",
+    text=element_text(color="white"),
+    axis.text = element_text(color="white", angle=90),
+    #axis.title = element_blank(),
+    panel.grid = element_blank(),
+    panel.background=element_rect(fill="black"),
+    plot.background = element_rect(fill="black"),
+    plot.title=element_text(size=12, hjust=0.2, face='bold', color="white"),
+    plot.margin = unit(rep(0,4), "cm"
+                       ) 
+  ) + labs(title="Difference in Top 200 Spotify Chart Position in UK and US") + scale_fill_viridis_d(begin=0, end=0.9) + geom_text(x=spotify_compare$full[5], y=100, label="Higher in UK Charts", color="white", size=10) + geom_text(x=spotify_compare$full[5], y=-100, label="Higher in US Charts", color="white", size=10) + theme(plot.title=element_text(family="sans", size=30, color="white"), axis.text=element_text(family="sans", size=20, color="white"), legend.title=element_text(family="sans", size=20), legend.text = element_text(family="sans", size=20, color="white"), axis.title=element_blank())
+  
+p
+
+ggsave("D:\\30daychartchallenge\\30daychart\\day17.png", width=10, height=7, dpi=300)
+```
+
+
