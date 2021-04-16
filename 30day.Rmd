@@ -37,6 +37,7 @@ library(cowplot)
 library(waffle)
 #library(patchwork)
 library(showtext)
+library(treemapify)
 #install.packages(c("devtools", "mapproj", "tidyverse", "gtools"), lib="D:\\Libraries\\win-library\\4.0")
 #devtools::install_github("marcusvolz/strava"
 #library(strava)
@@ -790,5 +791,93 @@ p
 
 
 ggsave("D:\\30daychartchallenge\\30daychart\\day15.png", width=10, height=7, dpi=300)
+
+```
+
+
+# Day 16- Trees
+
+Using globalforestwatch tree cover gain and CO2 emissions
+[Global Forest Watch](https://www.globalforestwatch.org/dashboards/global/?category=summary&dashboardPrompts=eyJzaG93UHJvbXB0cyI6dHJ1ZSwicHJvbXB0c1ZpZXdlZCI6WyJ3aWRnZXRTZXR0aW5ncyIsImRvd25sb2FkRGFzaGJvYXJkU3RhdHMiXSwic2V0dGluZ3MiOnsic2hvd1Byb21wdHMiOnRydWUsInByb21wdHNWaWV3ZWQiOlsid2lkZ2V0U2V0dGluZ3MiXSwic2V0dGluZ3MiOnsic2hvd1Byb21wdHMiOnRydWUsInByb21wdHNWaWV3ZWQiOltdLCJzZXR0aW5ncyI6eyJvcGVuIjpmYWxzZSwic3RlcEluZGV4IjowLCJzdGVwc0tleSI6IiJ9LCJvcGVuIjp0cnVlLCJzdGVwSW5kZXgiOjAsInN0ZXBzS2V5Ijoid2lkZ2V0U2V0dGluZ3MifSwib3BlbiI6dHJ1ZSwic3RlcEluZGV4IjowLCJzdGVwc0tleSI6ImRvd25sb2FkRGFzaGJvYXJkU3RhdHMifSwib3BlbiI6dHJ1ZSwic3RlcHNLZXkiOiJzaGFyZVdpZGdldCJ9&location=WyJnbG9iYWwiXQ%3D%3D&map=eyJkYXRhc2V0cyI6W3sib3BhY2l0eSI6MC43LCJ2aXNpYmlsaXR5Ijp0cnVlLCJkYXRhc2V0IjoicHJpbWFyeS1mb3Jlc3RzIiwibGF5ZXJzIjpbInByaW1hcnktZm9yZXN0cy0yMDAxIl19LHsiZGF0YXNldCI6InBvbGl0aWNhbC1ib3VuZGFyaWVzIiwibGF5ZXJzIjpbImRpc3B1dGVkLXBvbGl0aWNhbC1ib3VuZGFyaWVzIiwicG9saXRpY2FsLWJvdW5kYXJpZXMiXSwiYm91bmRhcnkiOnRydWUsIm9wYWNpdHkiOjEsInZpc2liaWxpdHkiOnRydWV9LHsiZGF0YXNldCI6InRyZWUtY292ZXItbG9zcyIsImxheWVycyI6WyJ0cmVlLWNvdmVyLWxvc3MiXSwib3BhY2l0eSI6MSwidmlzaWJpbGl0eSI6dHJ1ZSwicGFyYW1zIjp7InRocmVzaG9sZCI6MzAsInZpc2liaWxpdHkiOnRydWV9fV19&treeCoverGain=eyJwYWdlIjoxNH0%3D) 
+![C02 emissions](https://data.worldbank.org/indicator/EN.ATM.CO2E.PP.GD.KD?end=2012&most_recent_year_desc=true&start=2011)
+
+
+```{r, Day 16}
+
+# Read in the data 
+tree_gain <- fread("D:\\30daychartchallenge\\30daychart\\data\\treecover_gain.csv")
+co2 <- fread("D:\\30daychartchallenge\\30daychart\\data\\global_co2.csv")
+
+# Set row 1 to column headers 
+# Set row 1 to column names 
+names(co2) <- co2 %>% slice(1) %>% unlist()
+co2 <- co2[2:265,]
+
+# subset columns 
+co2 <- co2[, c(1,2,3,57,56,55,54,53,52, 51, 50, 49, 48, 47,46,45)]
+
+# melt to get all emissions data in one column 
+co2 <- melt(co2, id.vars=c("Country Name", "Country Code", "Indicator Name"), measure.vars = c("2012","2011","2010","2009","2008", "2007", "2006", "2005", "2004", "2003", "2002", "2001", "2000"))
+
+# Calculate average emissions in co2 for 2002-2012 as single variable to match 2002-2012 tree gain 
+co2<- co2 %>% group_by(`Country Code`) %>% summarise("Mean_Emissions"=mean(value, na.rm=TRUE))
+
+# Join two datasets together using ISO Code (not all join due to matching issues- lack of time to solve!)
+co2_tree <- merge(co2, tree_gain, by.x="Country Code", by.y="iso")
+
+colnames(co2_tree) <- c("Country_Code", "Mean_Emissions_2000_2012", "Tree_cover_extent_2000", "Tree_gain_2000_2012")
+
+# Remove any countries without either emissions or tree gain 
+co2_tree <- co2_tree[(!is.na(co2_tree$Mean_Emissions_2000_2012) & !is.na(co2_tree$Tree_gain_2000_2012)),]
+
+
+# Normalise tree gain by dividing by country size in ha
+country_size <- read_html("https://www.worldometers.info/geography/largest-countries-in-the-world/") %>% 
+    # list all tables on the page
+    html_nodes(css = "table") %>%
+    # select the one containing needed key words
+    extract2(., str_which(string = . , pattern = "Russia")) %>% 
+    # convert to a table
+    html_table(fill = T)
+
+country_size<- country_size[,c(2,5)]
+
+# gsub to remove commas 
+country_size$`Land Area (Km²)` <- gsub(",", "", country_size$`Land Area (Km²)`)
+country_size$`Land Area (Km²)` <- as.numeric(country_size$`Land Area (Km²)`)
+
+# Join on 3 letter Country code 
+country_code <- read_html("https://www.iban.com/country-codes") %>% 
+    # list all tables on the page
+    html_nodes(css = "table") %>%
+    # select the one containing needed key words
+    extract2(., str_which(string = . , pattern = "Russia")) %>% 
+    # convert to a table
+    html_table(fill = T)
+country_code <- country_code[,c(1,3)]
+
+# Join size to 3 letter code
+country_size <- merge(country_size, country_code, by="Country")
+
+# Join this to the co2_tree data to normalise tree gain by land area 
+co2_tree <- merge(co2_tree, country_size, by.x="Country_Code", by.y="Alpha-3 code")
+
+# Convert km2 to ha 
+co2_tree$Land_ha <- co2_tree$`Land Area (Km²)` * 100
+
+# Divide tree gain by total land area to calculate % 
+co2_tree$perc_gain <- co2_tree$Tree_gain_2000_2012 / co2_tree$Land_ha * 100
+# Remove any countries without perc_gain 
+co2_tree <- co2_tree[!is.na(co2_tree$perc_gain) & !is.na(co2_tree$Mean_Emissions_2000_2012),]
+
+
+max(co2_tree$perc_gain)
+# Visualise 
+p <- ggplot(co2_tree, aes(area=perc_gain, fill=Mean_Emissions_2000_2012)) + geom_treemap() + scale_fill_viridis(direction=-1, option="D") + labs(title="Treemap of Tree Gain as % of Total Land Area and Emissions (kg per 2017 PPP $ of GDP) (2000-2012)", fill="Mean Emissions (kg per 2017 PPP $ of GDP) (2000-2012)") + geom_treemap_text(fontface = "italic", colour = "black", place = "centre", grow = TRUE, label=co2_tree$Country_Code)  + theme(plot.title=element_text(family="sans", size=30), axis.text=element_text(family="sans", size=30), legend.title=element_text(family="sans", size=20), legend.text = element_text(family="sans", size=20))
+p
+
+
+
+ggsave("D:\\30daychartchallenge\\30daychart\\day16.png", width=10, height=7, dpi=300)
 
 ```
