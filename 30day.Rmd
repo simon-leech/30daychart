@@ -939,3 +939,49 @@ ggsave("D:\\30daychartchallenge\\30daychart\\day17.png", width=10, height=7, dpi
 ```
 
 
+# Day 18- Connections 
+```{r Day 18} 
+# Read in the data
+broadband <- read_xlsx("D://30daychartchallenge//30daychart//data/Broadband-speeds-2020.xlsx", skip=3, sheet=2)
+# remove useless columns 
+broadband <- subset(broadband, select=c(`MSOA code`, `MSOA name`, `Nation/Region`, `Average download speed (Mbps)`))
+# Set column names
+colnames(broadband) <- c("MSOA_Code", "MSOA_Name", "Nation_Region", "Speed")
+
+# Remove welsh data 
+broadband <- broadband[broadband$Nation_Region!="Wales" & broadband$Nation_Region!="Scotland" & broadband$Nation_Region!="Northern Ireland",]
+# Calculate Regional Averages 
+averages <- broadband %>% group_by(Nation_Region) %>% summarise("Speed"=mean(Speed, na.rm=TRUE)) 
+val <- mean(averages$Speed)
+
+averages <- averages %>% add_row(Nation_Region="National", "Speed"= mean(averages$Speed))
+
+# Subset data to 2 rows from each region 
+broadband <- merge(broadband, averages, by="Nation_Region")
+broadband$National_Speed <- val
+# name columns 
+colnames(broadband) <- c("Nation_Region", "MSOA_Code", "MSOA_Name", "Speed", "Region_Speed", "National_Speed")
+
+
+# Visualise two from each region 
+broadband_sub2 <- broadband %>% group_by(Nation_Region) %>% slice(1:2) %>% ungroup()
+
+
+
+
+ggplot(data=broadband_sub2, aes(x=MSOA_Code, y=Speed,fill=Nation_Region)) + geom_bar(stat="identity", alpha=0.8)  + geom_point(data=broadband_sub2, aes(x=MSOA_Code, y=National_Speed, color="white", fill="white"), shape=23, size=2, fill="white", color="white", alpha=0.6) + geom_point(data=broadband_sub2, aes(x=MSOA_Code, y=Region_Speed, fill="black"), shape=1, fill="black", alpha=0.8) + labs(title = "Average Broadband Speeds (Mbps)\nRegional Average in Black and National Average in White") + ylab("Broadband Speed (Mpbs)") + xlab("MSOA Code") + theme(plot.background=element_rect(fill="white", color="#E5E5E3"),panel.background=element_rect(fill="#E5E5E3", color="#E5E5E3"), panel.grid.major=element_blank(), panel.grid.minor=element_blank(), plot.caption = element_text(family="sans", face="italic", size=20), plot.title=element_text(family="sans", size=30), axis.text=element_text(family="sans", size=30),legend.position="bottom", legend.title=element_text(family="sans", size=20), legend.text = element_text(family="sans", size=20), axis.title = element_text(family="sans", size=20)) + theme(axis.text.x=element_text(angle=90)) 
+
+
+ggsave("D:\\30daychartchallenge\\30daychart\\day18.png", width=10, height=7, dpi=300)
+
+```
+
+
+
+
+
+
+
+
+
+
