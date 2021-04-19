@@ -976,7 +976,25 @@ ggsave("D:\\30daychartchallenge\\30daychart\\day18.png", width=10, height=7, dpi
 
 ```
 
+# Day 19- Global Change 
+```{r Day 19} 
 
+eruptions <-fread('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-05-12/eruptions.csv')
+# Remove year before 0 
+eruptions <- eruptions[eruptions$start_year>=1021 & !is.na(eruptions$vei),]
+
+ggplot(data=eruptions, aes(x=start_year, y=latitude, color=vei)) + geom_point(alpha=0.5) + scale_color_viridis_c(direction=-1, option="A") + theme(plot.background=element_rect(fill="white", color="#E5E5E3"),panel.background=element_rect(fill="#E5E5E3", color="#E5E5E3"), panel.grid.major=element_blank(), panel.grid.minor=element_blank(), plot.caption = element_text(family="sans", face="italic", size=20), plot.title=element_text(family="sans", size=30), axis.text=element_text(family="sans", size=30),legend.position="bottom", legend.title=element_text(family="sans", size=20), legend.text = element_text(family="sans", size=20), axis.title = element_text(family="sans", size=20)) + xlab("Date") + ylab("Latitude") + labs(title="Volcanic Eruptions in the last 1000 years", caption="Source: Tidytuesday | Inspiration from similar post by @marcreid.")
+
+ggsave("D:\\30daychartchallenge\\30daychart\\day19.png", width=10, height=7, dpi=300)
+
+temperature <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-07/temperature.csv')
+
+temperature <- temperature[temperature$temp_type=="min" & !is.na(temperature$temperature),]
+
+ggplot(data=temperature, aes(x=date, y=city_name, fill=temperature)) + geom_tile() + scale_fill_viridis_c(option="A", direction=-1) + theme(plot.background=element_rect(fill="white", color="#E5E5E3"),panel.background=element_rect(fill="#E5E5E3", color="#E5E5E3"), panel.grid.major=element_blank(), panel.grid.minor=element_blank(), plot.caption = element_text(family="sans", face="italic", size=20), plot.title=element_text(family="sans", size=30), axis.text=element_text(family="sans", size=30),legend.position="bottom", legend.title=element_text(family="sans", size=20), legend.text = element_text(family="sans", size=20), axis.title = element_text(family="sans", size=20)) + xlab("Date") + ylab("Min Temperature (C)")
+
+ggsave("D:\\30daychartchallenge\\30daychart\\day19.png", width=10, height=7, dpi=300)
+```
 
 
 
