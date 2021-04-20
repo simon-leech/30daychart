@@ -38,6 +38,7 @@ library(waffle)
 #library(patchwork)
 library(showtext)
 library(treemapify)
+library(ggtext)
 #install.packages(c("devtools", "mapproj", "tidyverse", "gtools"), lib="D:\\Libraries\\win-library\\4.0")
 #devtools::install_github("marcusvolz/strava"
 #library(strava)
@@ -996,7 +997,28 @@ ggplot(data=temperature, aes(x=date, y=city_name, fill=temperature)) + geom_tile
 ggsave("D:\\30daychartchallenge\\30daychart\\day19.png", width=10, height=7, dpi=300)
 ```
 
+# Day 20- Upwards 
+```{r Day 20}
+astronauts <- fread('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-14/astronauts.csv')
+# Keep one instance of each astronaut 
+astronauts <- astronauts %>% group_by(name) %>% summarise("hours"=total_hrs_sum, "sex"=sex, "year"=min(year_of_mission)) %>% ungroup()
 
+# Keep one instance of each astronaut to plot total hours in space 
+astronauts <- astronauts[!duplicated(astronauts$name),]
+
+# Visualise 
+ggplot(data=astronauts, aes(y=hours, x=year)) + 
+  geom_segment(data=astronauts[astronauts$sex=="male",],aes(xend=year, color=sex), yend=0, alpha=0.2) +
+  geom_segment(data=astronauts[astronauts$sex=="female",],aes(xend=year, color=sex), yend=0, alpha=0.99) +
+  geom_point(color="grey", alpha=ifelse(astronauts$sex=="male", 0.2, 0.99), size=ifelse(astronauts$sex=="male", 1, 2)) +
+  scale_color_manual(values=c("yellow", "red"))  + labs(title = "**Mission Time in Space**  
+    <span style='color:yellow;'>Female</span> and 
+    <span style='color:red;'>Male</span> Astronauts") + theme_minimal() +
+  theme(
+    plot.title = element_markdown(lineheight = 1, size=20, color="dark grey"), legend.position="none", plot.background=element_rect(fill="black", color="black"), panel.background=element_rect(fill="black", color="black"), legend.background=element_rect(fill="black", color="black"), panel.grid = element_blank(), axis.title = element_text(color="dark grey", size=15)) + coord_flip() + xlab("Year of Earliest Mission") + ylab("Total Hours in Space") 
+
+ggsave("D:\\30daychartchallenge\\30daychart\\day20.png",width=7, height=7,  dpi=300)
+```
 
 
 
