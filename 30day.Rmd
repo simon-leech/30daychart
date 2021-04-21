@@ -1021,6 +1021,35 @@ ggsave("D:\\30daychartchallenge\\30daychart\\day20.png",width=7, height=7,  dpi=
 ```
 
 
+# Day 21- Downwards
+[Our World in Data](https://ourworldindata.org/co2-and-other-greenhouse-gas-emissions)
+```{r Day 21, fig.height=7, fig.width=10}
+# Read in the data
+co2<- fread("https://github.com/owid/co2-data/raw/master/owid-co2-data.csv")
+
+# Join on continent data 
+# Add Continent
+continent <- fread("D:\\30daychartchallenge\\30daychart\\data\\day6continent.csv")
+continent <- continent[,c(1,6)]
+continent$country[continent$country=="United Kingdom of Great Britain and Northern Ireland"]<-"United Kingdom"
+
+co2 <- merge(co2, continent, by="country")
+co2 <- as.data.frame(co2)
+
+# Visualise CO2 per capita through time for each country- just highlight a few for Europe
+p <- ggplot(data=co2[co2$continent=="Europe" & co2$year>=2000,], aes(x=year, y=co2_per_capita, group=country)) + geom_line() + theme(legend.position="none") +
+  gghighlight(max(co2_per_capita) >10)  + 
+  geom_line(data=co2[co2$country=="United Kingdom" & co2$year>=2000,], aes(x=year, y=co2_per_capita), color="blue") + 
+  labs(title = "**CO2 per capita emissions (tonnes/yr) in Europe since 2000**  
+    <span style='color:black;'>CO2 per capita in 2000 of >10 </span><br>
+    <span style='color:blue;'>United Kingdom</span>", caption="Source: OurWorldinData") + theme_minimal() + 
+  theme(plot.title = element_markdown(size=30, lineheight=0.5, color="#3b444b", hjust=0), legend.position="none", plot.background=element_rect(fill="grey", color="black"), panel.background=element_rect(fill="white", color="black"), legend.background=element_rect(fill="white", color="black"), panel.grid = element_blank(), axis.title = element_text(color="black", size=15)) + xlab("Year") + ylab("CO2 Per Capita (tonnes/yr)") 
+
+p
+
+ggsave("D:\\30daychartchallenge\\30daychart\\day21.png",width=5, height=6, dpi=300)
+```
+
 
 
 
