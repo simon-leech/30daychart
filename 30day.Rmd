@@ -1108,5 +1108,80 @@ animate(p, fps=8) #2 frames per second speed
 anim_save("D:\\30daychartchallenge\\30daychart\\day22.gif", width=6, height=4)
 ```
 
+# Day 23- Tiles
+
+```{r Day 23, fig.height=6, fig.width=10}
+library(rayshader)
+library(rayrender)
+# Read in the data 
+global_temp <- fread("https://www.ncdc.noaa.gov/cag/global/time-series/globe/land_ocean/all/12/1880-2019/data.csv")
+
+# Split year into Year and Month 
+global_temp$Year_only <- stri_sub(global_temp$Year, 0,4)
+global_temp$Month <- stri_sub(global_temp$Year,5,6)
+
+# Rejoin in a correct month and year format 
+global_temp$Year <- paste(global_temp$Year_only, global_temp$Month, sep="-")
+# Convert to date format
+global_temp$Year <- as.yearmon(global_temp$Year, format="%Y-%m")
+
+global_temp$Month <- as.factor(global_temp$Month)
+
+# Visualise 
+p <- ggplot() + geom_tile(data=global_temp, aes(x=Year_only, y=Month, fill=Value)) + scale_fill_distiller(type="div", palette="Spectral") + scale_y_discrete(limits = rev(levels(global_temp$Month))) + theme(plot.background = element_rect(fill="#ECEAE4", colour="#ECEAE4"), panel.grid=element_blank(),panel.background = element_rect(fill="#ECEAE4", colour="black"), axis.text.y=element_text(size=12), axis.text.x=element_text(size=12), text=element_text(family="mono"), plot.title=element_text(family="mono"),plot.caption=element_text(size=6), legend.background = element_rect(fill="#ECEAE4")) + xlab("Year") + ylab("Month") + labs(fill="") +  scale_x_discrete(labels = as.character(seq(min(global_temp$Year_only), max(global_temp$Year_only), by = 10)), breaks = seq(min(global_temp$Year_only), max(global_temp$Year_only), by = 10), 
+        expand=c(0,0))
+
+# Advanced Rayshader with height included
+plot_gg(p, width = 5, height = 5, scale = 350,
+        zoom = 0.7, theta = 10, phi = 30, windowsize = c(800, 800))
+
+render_snapshot(clear = TRUE,"D:\\30daychartchallenge\\30daychart\\day23.png", title_text = "Global Monthly Temperature Anomalies (C)", 
+               title_color = "white", title_bar_color = "black",
+               title_font = "Helvetica", gravity = "North")
+
+```
+
+
+# Read in Olympics Data
+olympics <- read_html("https://en.wikipedia.org/wiki/Summer_Olympic_Games#List_of_Summer_Olympic_Games") %>% 
+    # list all tables on the page
+    html_nodes(css = "table") %>%
+    # select the one containing needed key words
+    extract2(., str_which(string = . , pattern = "King George I")) %>% 
+    # convert to a table
+    html_table(fill = T)
+
+# Remove useless columns 
+olympics <- olympics[,c(1,3,5,6,7,8,9)]
+
+# Turn first row into colnames 
+colnames(olympics)<- c(olympics[1,])
+# Remove first row 
+olympics <- olympics[2:35,]
+
+# Remove olympics during the wars and those in the future 
+olympics <- olympics[olympics$Olympiad!=1916 & olympics$Olympiad!=1940 & olympics$Olympiad!=1944 & olympics$Olympiad!=2020 & olympics$Olympiad!=2024 & olympics$Olympiad!=2028,]
+
+# Alter Sports(Disciplines) column to retain just the disciplines 
+olympics$Disciplines <- stringr::str_extract(string = olympics$`Sports(Disciplines)`,
+                                               pattern = "(?<=\\().*(?=\\))")
+
+# Calculate % participation by men 
+olympics$perc_men <- as.numeric(olympics$Men)/as.numeric(olympics$Total) * 100
+
+# Visualise the data as tile 
+ggplot() + geom_tile(data=olympics, aes(x=Olympiad, y=Disciplines))
+
+
+
+
+
+
+
+
+
+
+
+
 
 
