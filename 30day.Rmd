@@ -39,11 +39,14 @@ library(waffle)
 library(showtext)
 library(treemapify)
 library(ggtext)
+library(gganimate)
+library(transformr)
+library(zoo)
 #install.packages(c("devtools", "mapproj", "tidyverse", "gtools"), lib="D:\\Libraries\\win-library\\4.0")
 #devtools::install_github("marcusvolz/strava"
 #library(strava)
-
-
+library(extrafont)
+loadfonts(device="win") # run each time R session start
 font_add_google("Montserrat", "Montserrat")
 font_add_google("Sacramento", "Sacramento")
 font_add_google("Catamaran", "Catamaran")
@@ -1036,21 +1039,74 @@ continent$country[continent$country=="United Kingdom of Great Britain and Northe
 co2 <- merge(co2, continent, by="country")
 co2 <- as.data.frame(co2)
 
+# Set data so 1990 level is set to 100, and calculate % Reductions
+co2 <- co2[co2$year>=1990,]
+co2<- co2 %>% group_by(country) %>% summarise("year"=year, "co2"= co2_per_capita,  "reduction"=(co2_per_capita)/co2_per_capita[1] * 100, "continent"=continent) %>% ungroup()
+
+# Labelling dataset
+labels_high <- co2[co2$continent=="Europe" & co2$year==2019 & co2$reduction>100,]
+labels_low <- co2[co2$continent=="Europe" & co2$year==2019 & co2$reduction<60,]
+
 # Visualise CO2 per capita through time for each country- just highlight a few for Europe
-p <- ggplot(data=co2[co2$continent=="Europe" & co2$year>=2000,], aes(x=year, y=co2_per_capita, group=country)) + geom_line() + theme(legend.position="none") +
-  gghighlight(max(co2_per_capita) >10)  + 
-  geom_line(data=co2[co2$country=="United Kingdom" & co2$year>=2000,], aes(x=year, y=co2_per_capita), color="blue") + 
-  labs(title = "**CO2 per capita emissions (tonnes/yr) in Europe since 2000**  
-    <span style='color:black;'>CO2 per capita in 2000 of >10 </span><br>
-    <span style='color:blue;'>United Kingdom</span>", caption="Source: OurWorldinData") + theme_minimal() + 
-  theme(plot.title = element_markdown(size=30, lineheight=0.5, color="#3b444b", hjust=0), legend.position="none", plot.background=element_rect(fill="grey", color="black"), panel.background=element_rect(fill="white", color="black"), legend.background=element_rect(fill="white", color="black"), panel.grid = element_blank(), axis.title = element_text(color="black", size=15)) + xlab("Year") + ylab("CO2 Per Capita (tonnes/yr)") 
+p <- ggplot(data=co2[co2$continent=="Europe" & co2$year>=1990,], aes(x=year, y=reduction, group=country)) +
+  labs(title = "**CO2 per capita (tonnes/yr) in Europe<br> relative to 1990 levels**  
+    <span style='color:red;'>CO2 per capita more than 1990 levels </span><br>
+    <span style='color:#006400;'>40% reduction in CO2 per capita relative to 1990</span><br> 
+    <span style='color:blue;'>United Kingdom</span><br> ", caption="Source: OurWorldinData") + theme_minimal() + geom_line(alpha=0.5, color="black") + theme(legend.position="none") +
+  geom_text_repel(data=labels_high, label=labels_high$country, x=labels_high$year, y=labels_high$reduction, color="red", max.overlaps = 10, hjust=1) + 
+  geom_text_repel(data=labels_low, label=labels_low$country, x=labels_low$year, y=labels_low$reduction, color="#006400", max.overlaps = 10, hjust=1) + 
+  geom_line(data=co2[co2$country=="United Kingdom" & co2$year>=1990,], aes(x=year, y=reduction), color="blue") +
+  theme(plot.title = element_markdown(size=30, lineheight=0.5, color="#3b444b", hjust=0), legend.position="none", plot.background=element_rect(fill="grey", color="black"), panel.background=element_rect(fill="white", color="black"), legend.background=element_rect(fill="white", color="black"), panel.grid = element_blank(), axis.title = element_text(color="black", size=15)) + xlab("Year") + ylab("Relative CO2 Per Capita (tonnes/yr) \n100= 1990 levels") + geom_text(aes(x=1991, y=60), label="40% Reduction\n in Emissions", alpha=0.4, size=3) + geom_text(aes(x=1991, y=110), label="Emissions Exceeding \n1990 levels", alpha=0.4, size=3) + geom_hline(aes(yintercept=100), linetype="dashed",color="black") + geom_hline(aes(yintercept=60), color="black", linetype="dashed")  
 
-p
+p 
 
-ggsave("D:\\30daychartchallenge\\30daychart\\day21.png",width=5, height=6, dpi=300)
+ggsave("D:\\30daychartchallenge\\30daychart\\day21_2.png",width=10, height=7, dpi=300)
 ```
 
+# Day 22- Animate 
+[ONS Data](https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/lf25/lms)
+```{r Day 22, fig.height=6, fig.width=10}
 
+# Female Employment Rate (ONS)
+female_employment <- fread("https://www.ons.gov.uk/generator?format=csv&uri=/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/lf25/lms", skip=8)
+colnames(female_employment) <- c("Year", "Employment Rate (%)")
+
+# Keep only monthly data 
+female_employment <- female_employment[251:850,]
+
+# Convert into data format 
+female_employment$Year <- as.yearmon(female_employment$Year, format="%Y %b")
+female_employment$Year <- as.Date(female_employment$Year)
+
+# Add sex column 
+female_employment$Sex <- "Female"
+
+
+# Male Employment Rate (ONS)
+male_employment <- fread("https://www.ons.gov.uk/generator?format=csv&uri=/employmentandlabourmarket/peopleinwork/employmentandemployeetypes/timeseries/mgsv/lms", skip=8)
+colnames(male_employment) <- c("Year", "Employment Rate (%)")
+
+# Keep only monthly data 
+male_employment <- male_employment[251:850,]
+
+# Convert into data format 
+male_employment$Year <- as.yearmon(male_employment$Year, format="%Y %b")
+male_employment$Year <- as.Date(male_employment$Year)
+
+# Add sex column 
+male_employment$Sex <- "Male"
+
+# Create static plot with label for Sex 
+p <- ggplot() + 
+geom_line(data=female_employment, aes(x=Year, y=`Employment Rate (%)`), color="#ABDEE6", size=1.2)  +
+geom_line(data=male_employment, aes(x=Year, y=`Employment Rate (%)`), size=1.2, colour="#FFC8A2") + scale_x_date(breaks="year", date_labels="%Y") + scale_y_continuous(limits=c(50,100), breaks=c(50,60,70,80,90,100)) + geom_text(data=female_employment, aes(x=Year, y=`Employment Rate (%)`, label=paste0(Sex, ":", `Employment Rate (%)`, "%"))) + geom_text(data=male_employment, aes(x=Year, y=`Employment Rate (%)`, label=paste0(Sex, ":", `Employment Rate (%)`, "%"))) + xlab("") +
+  labs(title="Employment Rate (%) by Sex \nDate :{frame_along}", caption="Employment Rate (%) aged 16 to 64, seasonally adjusted. \nSource: Office for National Statistics") + theme_classic() + theme(plot.background = element_rect(fill="#ECEAE4", colour="#ECEAE4"), panel.grid=element_blank(),panel.background = element_rect(fill="#ECEAE4", colour="black"), axis.text.x=element_text(angle=90, size=7), text=element_text(family="mono"), plot.title=element_text(family="mono"),plot.caption=element_text(size=6)) + 
+# Animate moving through by Year variable (which contains Monthly Data)
+transition_reveal(Year)
+
+animate(p, fps=8) #2 frames per second speed
+anim_save("D:\\30daychartchallenge\\30daychart\\day22.gif", width=6, height=4)
+```
 
 
 
