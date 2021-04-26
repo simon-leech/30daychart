@@ -1253,7 +1253,46 @@ ggplot() +
 ggsave("D:\\30daychartchallenge\\30daychart\\day26.png", dpi=300)
 ```
 
+# Day 27- Education
+```{r fig.height=7, fig.width=10}
+library(rcompanion)
+# Read in the data 
+education <- read_xlsx("D:\\30daychartchallenge\\30daychart\\data\\education_websites2.xlsx")
 
+# Add weekday to data 
+education$weekday <- lubridate::wday(education$Date, label=TRUE, abbr=FALSE)
+
+
+# Group data by weekday 
+education<- education %>% group_by(weekday) %>% summarise("Stack Overflow"=`Stack Overflow`, "ggplot2.tidyverse.org"=ggplot2.tidyverse.org, "Google"=Google, "Twitter"=Twitter)
+
+# Melt data 
+education_melt <- melt(education, id.vars="weekday")
+# Convert to character 
+education_melt$weekday <- as.character(education_melt$weekday)
+
+#Calculate mean and upper and lower bounds 
+education_plot <- groupwiseMean(value ~ weekday + variable, 
+              data=education_melt,
+              conf=0.90, 
+              digits=3)
+education_plot
+# Reorder to days of the week 
+education_plot$weekday <- factor(education_plot$weekday, levels=c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+education_plot
+# Visualise 
+ggplot() +  
+ geom_errorbar(data=education_plot, aes(x=weekday, ymin=Trad.lower, ymax=Trad.upper,group=variable), width=.2, position=position_dodge(.9), alpha=0.2) + geom_bar(data=education_plot, aes(x=weekday, y=Mean, fill=variable), stat="identity", size=1.5, alpha=0.8, position="dodge") + scale_fill_manual(values=c("#f48024", "black", "#DB4437","#1DA1F2")) +
+  labs(title = "**Educating Myself in R**  
+    <span style='color:#f48024;'>Stack Overflow</span> 
+    <span style='color:black;'>ggplot2.tidyverse.org</span>
+    <span style='color:#DB4437;'>Google</span>
+    <span style='color:	#1DA1F2;'>Twitter</span>", fill="Website", caption="Mean Website Usage per Day in bars, with 90% confidence intervals shown.") + theme_minimal() +
+  # Formatting
+  theme(plot.title = element_markdown(family="mono", size=20, color="black")) + theme(plot.background = element_rect(fill="#ECEAE4", colour="#ECEAE4"), legend.position="none", panel.grid=element_blank(), panel.background = element_rect(fill="#ECEAE4", colour="black"), axis.text.y=element_text(size=20), axis.text.x=element_text(size=20, angle=90), text=element_text(family="mono"),plot.caption=element_text(size=12), axis.title = element_text(size=20)) + xlab("") + ylab("Web Searches per Site")
+
+ggsave("D:\\30daychartchallenge\\30daychart\\day27.png", dpi=300)
+```
 
 
 
