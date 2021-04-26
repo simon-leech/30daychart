@@ -1232,6 +1232,26 @@ ggplot() +
 ggsave("D:\\30daychartchallenge\\30daychart\\day25.png",width=10, height=7, dpi=300)
 ```
 
+# Day 26- Trends 
+[Tweets](https://twitter.com/simonmleech)
+```{r fig.height=7, fig.width=10}
+# Read in the data 
+tweets <- read_xlsx("D:\\30daychartchallenge\\30daychart\\data\\tweets.xlsx")
+library(ggtext)
+# Visualise 
+ggplot() +  
+  stat_smooth(data=tweets, aes(x=Day, y=Impressions), method="lm", fullrange=TRUE, alpha=0.3) + 
+  scale_x_continuous(breaks=c(seq(0,30, by=5)), limits=c(0,30)) +
+  #xlim(0,30, breaks=c(0,5,10,15,20,25,30)) +  
+  geom_line(data=tweets, aes(x=Day, y=Impressions), size=1.5, alpha=0.8) +
+  labs(title = "**#30daychartchallenge Tweet Impressions**  
+    <span style='color:blue;'>Linear Model for Prediction</span> and 
+    <span style='color:grey;'>Uncertainty</span>") + theme_minimal() +
+  # Formatting
+  theme(plot.title = element_markdown(family="mono", size=20, color="black")) + theme(plot.background = element_rect(fill="#ECEAE4", colour="#ECEAE4"), panel.grid=element_blank(), panel.background = element_rect(fill="#ECEAE4", colour="black"), axis.text.y=element_text(size=20), axis.text.x=element_text(size=20, angle=0), text=element_text(family="mono"),plot.caption=element_text(size=20), axis.title = element_text(size=20))  + labs(caption="Source:@simonmleech #30daychartchallenge Tweets.") 
+
+ggsave("D:\\30daychartchallenge\\30daychart\\day26.png", dpi=300)
+```
 
 
 
