@@ -1141,7 +1141,8 @@ render_snapshot(clear = TRUE,"D:\\30daychartchallenge\\30daychart\\day23.png", t
 
 ```
 
-
+# Day 24- Monochrome 
+```{r}
 # Read in Olympics Data
 olympics <- read_html("https://en.wikipedia.org/wiki/Summer_Olympic_Games#List_of_Summer_Olympic_Games") %>% 
     # list all tables on the page
@@ -1168,13 +1169,68 @@ olympics$Disciplines <- stringr::str_extract(string = olympics$`Sports(Disciplin
 
 # Calculate % participation by men 
 olympics$perc_men <- as.numeric(olympics$Men)/as.numeric(olympics$Total) * 100
-
+olympics$perc_women <- 100-olympics$perc_men
 # Visualise the data as tile 
-ggplot() + geom_tile(data=olympics, aes(x=Olympiad, y=Disciplines))
+ggplot() + geom_bar(data=olympics, aes(x=Olympiad, y=Disciplines, fill=perc_women), stat="identity")  + theme(plot.background = element_rect(fill="#ECEAE4", colour="#ECEAE4"), panel.grid=element_blank(),panel.background = element_rect(fill="black", colour="black"), axis.text.y=element_text(size=20), axis.text.x=element_text(size=20, angle=90), text=element_text(family="mono"), plot.title=element_text(family="mono", size=30),plot.caption=element_text(size=6), legend.background = element_rect(fill="#ECEAE4"), legend.position="bottom",legend.text=element_text(size=20), legend.title=element_text(size=20), axis.title = element_text(size=20)) + scale_fill_distiller(palette="Greys", direction=-1) + labs(title="Number of Disciplines and \n% participation of Women by Olympics", fill="% Female \nParticipation")
 
+ggsave("D:\\30daychartchallenge\\30daychart\\day24.png",width=10, height=7, dpi=300)
+```
 
+# Day 25- Population
+[Eurostat](https://ec.europa.eu/eurostat/databrowser/view/proj_19np/default/table?lang=en)
+```{r}
+pop_proj <- read_xlsx("D:\\30daychartchallenge\\30daychart\\data\\pop_projections.xlsx",sheet=3, skip=10)
 
+# remove spacing columns in file 
+pop_proj <- pop_proj[,-c(3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35,37)]
+# remove first column and last three columns 
+pop_proj <- pop_proj[-c(1,36,37,38),]
 
+# Remove EU and EU Area and Free Data Association from data 
+pop_proj <- pop_proj[-c(1,2,30),]
+
+# Convert 2019 to numeric
+pop_proj$`2019`<-as.numeric(pop_proj$`2019`)
+
+# Melt data frame 
+pop_proj_melt <- melt(pop_proj, id.vars="TIME")
+
+# Rename Germany 
+pop_proj_melt$TIME[pop_proj_melt$TIME=="Germany (until 1990 former territory of the FRG)"]<- "Germany"
+
+# Rename Columns 
+colnames(pop_proj_melt) <- c("Country", "Year", "Population")
+pop_proj_melt$Year <- as.numeric(as.character(pop_proj_melt$Year))
+
+# Calculate % Change for each 5-year time period (so 2019 is 100)
+pop_proj_melt<- pop_proj_melt %>% group_by(Country) %>% summarise("Year"=Year, "pop_change"=(Population)/Population[1] * 100) %>% ungroup()
+# Calculate increase in pop 
+pop_proj_melt$pop_increase <- pop_proj_melt$pop_change-100
+
+# Add upper and lower bounds at 5% 
+pop_proj_melt$upper <- pop_proj_melt$pop_increase + 5 
+pop_proj_melt$lower <- pop_proj_melt$pop_increase-5
+
+# Create random subset of the data to plot 
+pop_proj_melt_sub <- pop_proj_melt %>% group_by(Country) %>% summarise() %>% sample_n(10) %>% ungroup()
+
+# Merge with dataframe to keep only those 10 countries 
+pop_proj_melt_sub <- merge(pop_proj_melt_sub, pop_proj_melt, by="Country")
+
+# Create label df 
+labels_df <- pop_proj_melt_sub[pop_proj_melt_sub$Year==2100,]
+
+# Visualise 
+ggplot() + 
+  geom_hline(yintercept=0, linetype="dashed", alpha=0.6) + 
+  geom_ribbon(data=pop_proj_melt_sub, aes(x=Year, y=pop_increase, group=Country,stat="identity", ymin=lower, ymax=upper),fill="grey", alpha=0.3) +
+  geom_line(data=pop_proj_melt_sub, aes(x=Year, y=pop_increase, color=Country))  +
+  geom_text_repel(data=labels_df, label=labels_df$Country, x=labels_df$Year, y=labels_df$pop_increase, color="black", max.overlaps = 10, hjust=1, size=5) + 
+  # Formatting
+  theme(plot.background = element_rect(fill="#ECEAE4", colour="#ECEAE4"), panel.grid=element_blank(),panel.background = element_rect(fill="#ECEAE4", colour="black"), axis.text.y=element_text(size=20), axis.text.x=element_text(size=20, angle=90), text=element_text(family="mono"), plot.title=element_text(family="mono", size=30),plot.caption=element_text(size=20), legend.background = element_rect(fill="#ECEAE4"), legend.position="none", legend.title=element_text(size=20), axis.title = element_text(size=20)) + ylab("Population Change (% 2019 Pop)") + labs(title="Population Change to 2100 Relative to 2019 Population Size \n 5% Upper and Lower Bounds in Grey", caption="Source:https://ec.europa.eu/eurostat/databrowser/view/proj_19np/default/table?lang=en ")
+
+ggsave("D:\\30daychartchallenge\\30daychart\\day25.png",width=10, height=7, dpi=300)
+```
 
 
 
