@@ -46,6 +46,8 @@ library(zoo)
 #devtools::install_github("marcusvolz/strava"
 #library(strava)
 library(extrafont)
+library(ggblur)
+library(ggecho)
 loadfonts(device="win") # run each time R session start
 font_add_google("Montserrat", "Montserrat")
 font_add_google("Sacramento", "Sacramento")
@@ -1292,6 +1294,67 @@ ggplot() +
   theme(plot.title = element_markdown(family="mono", size=20, color="black")) + theme(plot.background = element_rect(fill="#ECEAE4", colour="#ECEAE4"), legend.position="none", panel.grid=element_blank(), panel.background = element_rect(fill="#ECEAE4", colour="black"), axis.text.y=element_text(size=20), axis.text.x=element_text(size=20, angle=90), text=element_text(family="mono"),plot.caption=element_text(size=12), axis.title = element_text(size=20)) + xlab("") + ylab("Web Searches per Site")
 
 ggsave("D:\\30daychartchallenge\\30daychart\\day27.png", dpi=300)
+```
+
+
+# Day 28- Future 
+[Internet Speeds Forecasts- CISCO White Paper](https://www.cisco.com/c/en/us/solutions/collateral/executive-perspectives/annual-internet-report/white-paper-c11-741490.html#Trends)
+```{r fig.height=7, fig.width=10}
+# Read in the data 
+internet_speeds <- fread("D:\\30daychartchallenge\\30daychart\\data\\CISReport_Table5.csv")
+
+# Set row 1 to headers 
+names(internet_speeds) <- internet_speeds %>% slice(1) %>% unlist()
+# Remove row 1
+internet_speeds <- internet_speeds[c(2:8),]
+# Remove CAGR column 
+internet_speeds <- internet_speeds[,c(1:7)]
+
+# Melt data 
+internet_speeds_melt <- melt(internet_speeds, id.vars="Region")
+
+# Set column names 
+colnames(internet_speeds_melt) <- c("Region", "Year", "Speed")
+# Set year to numeric 
+internet_speeds_melt$Year <- as.numeric(as.character(internet_speeds_melt$Year))
+# Remove global line 
+internet_speeds_melt<- internet_speeds_melt[internet_speeds_melt$Region!="Global",]
+
+# Get hex colour codes for Pastel1 Palette
+brewer.pal(n=6, "Pastel1")
+
+# Visualise 
+ggplot() + 
+  # Normal line to 2021
+  geom_line(data=internet_speeds_melt[internet_speeds_melt$Year<=2020,], aes(x=Year, y=Speed, group=Region, color=Region)) + 
+  # Blurred line to 2023 for uncertainty
+  geom_line(data=internet_speeds_melt[internet_speeds_melt$Year>=2020,],aes(x=Year, y=Speed, group=Region, color=Region), stat="echo") +
+  # Normal points to 2021
+  geom_point(data=internet_speeds_melt[internet_speeds_melt$Year<=2020,], aes(x=Year, y=Speed)) + 
+  # Blurred points to 2023 for uncertainty 
+  geom_point_blur(data=internet_speeds_melt[internet_speeds_melt$Year>2020,], aes(x=Year, y=Speed, blur_size=ifelse(Year==2021, 2, ifelse(Year==2022, 4, 6)),alpha=0.5)) + scale_blur_size_continuous(range=c(2,6)) +
+  # Add line at 2021
+  geom_vline(xintercept=2020, linetype="dashed", alpha=0.6, color="grey") + 
+  # Pastel colour palette for the lines
+  scale_color_brewer(palette="Pastel1") +
+  # Labels
+  xlab("Year") + ylab("Average Internet Speed (Mbps)") +
+  labs(title = "**Average Internet Speed by Region (Mbps)**", subtitle=  
+    "<span style='color:#FBB4AE;'>Asia Pacific</span> 
+    <span style='color:	#B3CDE3;'>Central and Eastern Europe</span>
+    <span style='color:#CCEBC5;'>	Latin America</span><br>
+    <span style='color:#FED9A6;'>North America</span>
+    <span style='color:	#FFFFCC;'>Western Europe</span>
+    <span style='color:	#DECBE4;'>Middle East and Africa</span>
+    ", caption="Source: Cisco Annual Internet Report (2018–2023) White Paper (2020).") + theme_minimal() +
+  # Formatting
+  theme(plot.title = element_markdown(family="mono", size=20, color="black"), plot.subtitle = element_markdown(family="mono", size=14, color="black")) + theme(plot.background = element_rect(fill="#ECEAE4", colour="#ECEAE4"), legend.position="none", panel.grid=element_blank(), 
+  panel.background = element_rect(fill="#ECEAE4", colour="black"), axis.text.y=element_text(size=20), axis.text.x=element_text(size=20, angle=0), 
+  text=element_text(family="mono"),plot.caption=element_text(size=12), axis.title = element_text(size=20)) 
+  
+
+ggsave("D:\\30daychartchallenge\\30daychart\\day28.png", dpi=300)
+
 ```
 
 
