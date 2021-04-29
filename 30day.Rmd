@@ -48,11 +48,11 @@ library(zoo)
 library(extrafont)
 library(ggblur)
 library(ggecho)
-loadfonts(device="win") # run each time R session start
-font_add_google("Montserrat", "Montserrat")
-font_add_google("Sacramento", "Sacramento")
-font_add_google("Catamaran", "Catamaran")
-showtext_auto()
+#loadfonts(device="win") # run each time R session start
+#font_add_google("Montserrat", "Montserrat")
+#font_add_google("Sacramento", "Sacramento")
+#font_add_google("Catamaran", "Catamaran")
+#showtext_auto()
 ```
 
 ## 30 Day Chart Challenge 
@@ -1357,6 +1357,56 @@ ggsave("D:\\30daychartchallenge\\30daychart\\day28.png", dpi=300)
 
 ```
 
+
+# Day 29- Deviations
+[List of Countries and dependencies by population density](https://en.wikipedia.org/wiki/List_of_countries_and_dependencies_by_population_density)
+```{r}
+# Read in the data
+pop_density <- read_html("https://en.wikipedia.org/wiki/List_of_countries_and_dependencies_by_population_density") %>% 
+    # find correct table (inspect > find table > copy Xpath)
+    html_node(xpath='//*[@id="mw-content-text"]/div[1]/table[2]') %>%
+    # convert to a table
+    html_table(fill = T)
+
+# Clean table 
+# Remove row 1 
+pop_density<- pop_density[2:104,]
+# Remove all columns except Country and Density 
+pop_density <- pop_density[,c(2,6)]
+# Rename columns 
+colnames(pop_density) <- c("Country", "Density (/km2)")
+
+# Join on continent data 
+# Add Continent
+continent <- fread("D:\\30daychartchallenge\\30daychart\\data\\day6continent.csv")
+continent <- continent[,c(1,6)]
+continent$country[continent$country=="United Kingdom of Great Britain and Northern Ireland"]<-"United Kingdom"
+
+# Merge 
+pop_density <- merge(pop_density, continent, by.x="Country", by.y="country")
+
+# Visualise 
+
+ggplot(data=pop_density[pop_density$continent!="Oceania",], aes(y=as.numeric(`Density (/km2)`), x=continent, fill=continent)) +
+  # Display points
+  geom_jitter(height=0, width=0.01) +
+  # Display violin
+  geom_violin(alpha=0.8) + 
+  # Display mean 
+  stat_summary(fun.y='mean', geom='point', size=2, shape=21, fill='#FF968A') +
+  # Display median 
+  stat_summary(fun.y='median', geom='point', size=2, shape=21, fill='#97C1A9') +
+  # Label mean 
+  geom_text(y=113, x="Americas", label="Mean", alpha=0.01)+
+  # Label median
+  geom_text(y=50, x="Americas", label="Median", alpha=0.01) +
+  # Formatting
+  theme(plot.title = element_markdown(family="serif", size=20, color="black"), plot.subtitle = element_markdown(family="mono", size=14, color="black")) + theme(plot.background = element_rect(fill="#ECEAE4", colour="#ECEAE4"), legend.position="none", panel.grid=element_blank(), 
+  panel.background = element_rect(fill="white", colour="black"), axis.text.y=element_text(size=20), axis.text.x=element_text(size=20, angle=0), 
+  text=element_text(family="serif"),plot.caption=element_text(size=12), axis.title = element_text(size=20)) + xlab("Continent") + ylab("Population Density (people/km2)") + scale_fill_brewer(palette="Pastel2") + labs(title="Population Density by Continent", caption="Source:Wikipedia-List of countries and dependencies by population density.")
+
+ggsave("D:\\30daychartchallenge\\30daychart\\day29.png",width=7, height=5, dpi=300)
+```
 
 
 
