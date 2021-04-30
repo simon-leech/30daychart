@@ -1407,9 +1407,62 @@ ggplot(data=pop_density[pop_density$continent!="Oceania",], aes(y=as.numeric(`De
 
 ggsave("D:\\30daychartchallenge\\30daychart\\day29.png",width=7, height=5, dpi=300)
 ```
+# Day 30- 3D
+[List of Countries and dependencies by population density](https://en.wikipedia.org/wiki/List_of_countries_and_dependencies_by_population_density)
+```{r}
+library(stringi)
+# Read in the data
+country_height <- read_html("https://en.wikipedia.org/wiki/List_of_elevation_extremes_by_country") %>% 
+    # find correct table (inspect > find table > copy Xpath)
+    html_node(xpath='//*[@id="mw-content-text"]/div[1]/table') %>%
+    # convert to a table
+    html_table(fill = T)
+
+# Clean table 
+# Remove all columns except Country and Density 
+country_height <- country_height[,c(1,3)]
+# Split column at first space in data to keep height in m 
+country_height$`Maximum elevation` <- stri_sub(country_height$`Maximum elevation`, from=1, to=4)
+country_height$`Maximum elevation` <- as.numeric(country_height$`Maximum elevation`)
+
+ggplot() + geom_point(data=country_height, aes(x=`Country or region`, y=`Maximum elevation`, fill=`Maximum elevation`))
+
+```
 
 
+# Day 30- 3D(Using Strips Data) 
+![Dplyr dataset](https://www.rpubs.com/gabrielbsousa/storms#:~:text=The%20%E2%80%9Cstorms%E2%80%9D%20dataset%20from%20the,the%20lifetime%20of%20a%20storm.)
+```{r, Day 30}
+# Day 12- Hurricanes
+storms <- dplyr::storms
 
+# Group by name and keep only the maximum hu_diameter 
+storms<- storms %>% group_by(name) %>% mutate("max"= max(hu_diameter)) %>% ungroup()
 
+# Keep only one record for each storm 
+storms <- storms[!duplicated(storms$name),]
 
+# Add counting column 
+storms$count <- 1
+# Group data by year and count number of storms in that year 
+storms <- storms %>% group_by(year) %>% mutate("count"=sum(count), "mean_wind"=mean(wind)) %>% ungroup()
+
+# Remove duplicated year records 
+storms <- storms[!duplicated(storms$year), ]
+
+# Proportional symbol plot over space
+p<- ggplot(storms, aes(x=year, y=1, fill=mean_wind)) + geom_tile()  + theme(plot.background=element_rect(fill="white", color="#E5E5E3"),panel.background=element_rect(fill="#E5E5E3", color="#E5E5E3"), panel.grid.major=element_blank(), panel.grid.minor=element_blank(), plot.caption = element_text(family="Montserrat", face="italic", size=15), plot.title=element_text(family="Montserrat", size=15), axis.text=element_text(family="Monserrat", size=15), axis.title=element_text(size=15),legend.position="bottom", axis.ticks.y = element_blank(), axis.text.y=element_blank(), axis.title.y=element_blank()) + 
+  labs(caption="#30daychartchallenge | Source: dplyr::storms", fill="Wind Speeds (knots)") + xlab("Year")  +  scale_fill_viridis_c(direction=-1)
+
+# Advanced Rayshader with height included
+plot_gg(p, width = 5, height = 5, scale = 350,
+        zoom = 0.7, theta = 10, phi = 30, windowsize = c(800, 800))
+
+render_snapshot(clear = TRUE,"D:\\30daychartchallenge\\30daychart\\day30.png", title_text = "Mean Hurricane Wind Speed (Knots)", 
+               title_color = "white", title_bar_color = "black",
+               title_font = "Helvetica", gravity = "North")
+
+ggsave("D:\\30daychartchallenge\\30daychart\\day12.png", width=10, height=5, dpi=300)
+
+```
 
